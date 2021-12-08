@@ -1,0 +1,70 @@
+Race Condition in Java Multi-Threading
+
+Race condition in Java occurs in a multi-threaded environment when more than one thread try to access a shared resource (modify, write) at the same time. Since multiple threads try to race each other to finish executing a method thus the name race condition.
+
+Two points to note about race condition are-
+It is safe if multiple threads are trying to read a shared resource as long as they are not trying to change it.
+Multiple threads executing inside a method is not a problem in itself, problem arises when these threads try to access the same resource. Examples of shared resources are class variables, DB record in a table, writing in a file.
+Example of race condition in Java
+Let’s see one example of race condition in Java multi-threading, where we have a shared instance variable. Since there are three threads sharing the same object of the class so the field in the object is shared among the threads.
+
+This instance variable c is incremented and decremented so every thread should leave it in the state it initially was i.e. if c is zero in the start, incrementing it will make it 1 and decrementing it will make it zero again.
+
+Here some delay is simulated using sleep(), as in a real production system there may be many processes running and many users might be accessing the same application at any given time. In that kind of scenario we can’t be sure of when context switching will happen among the threads contending for CPU-cycle. That’s why race condition related bugs are very difficult to find and you may not be even able to reproduce them as that kind of context-switching may not happen when you are trying to reproduce the race condition related error.
+
+Java code
+
+class Counter  implements Runnable{
+  private int c = 0;
+
+  public void increment() {
+    try {
+      Thread.sleep(10);
+    } catch (InterruptedException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    c++;
+  }
+
+  public void decrement() {    
+    c--;
+  }
+
+  public int getValue() {
+    return c;
+  }
+    
+  @Override
+  public void run() {
+    //incrementing
+    this.increment();
+    System.out.println("Value for Thread After increment " 
+    + Thread.currentThread().getName() + " " + this.getValue());
+    //decrementing
+    this.decrement();
+    System.out.println("Value for Thread at last " 
+    + Thread.currentThread().getName() + " " + this.getValue());        
+  }
+}
+
+public class RaceConditionDemo{
+  public static void main(String[] args) {
+    Counter counter = new Counter();
+    Thread t1 = new Thread(counter, "Thread-1");
+    Thread t2 = new Thread(counter, "Thread-2");
+    Thread t3 = new Thread(counter, "Thread-3");
+    t1.start();
+    t2.start();
+    t3.start();
+  }    
+}
+Output
+
+Value for Thread After increment Thread-2 3
+Value for Thread at last Thread-2 2
+Value for Thread After increment Thread-1 2
+Value for Thread at last Thread-1 1
+Value for Thread After increment Thread-3 1
+Value for Thread at last Thread-3 0
+It can be seen how the shared variable c is giving wrong values.
